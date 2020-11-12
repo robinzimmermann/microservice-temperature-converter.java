@@ -33,42 +33,26 @@ The microservice will connect to your Kafka to publish and subscribe. To start t
 
 ```
 $ java -jar target/microservice-temperature-converter-develop-SNAPSHOT.jar \
-    -b kafka.example.com:9092 \
-    --input-topic sensors \
-    --output-topic readings \
-    --requests-topic readings.requests
+    -b kafka.example.com:9092
 ```
 
-Note that you don't need to specify the `readings.responses` topic here. That reply-to topic will be included as a header on inbound control messages.
+If port `9093` or `9094` is specified, the connection will use SSL. All other ports will default to PLAINTEXT. This default behavior can be overridden with the `--protocol` parameter.
 
 Additional Kafka consumer and producer properties can be specified if needed:
 
 ```
 $ java -jar target/microservice-temperature-converter-develop-SNAPSHOT.jar \
     -b kafka.example.com:9092 \
-    --input-topic sensors \
-    --output-topic readings \
-    --requests-topic readings.requests \
     --kafka-consumer-property session.timeout.ms=5000 \
     --kafka-consumer-property ... \
     --kafka-producer-property batch.size=16384 \
     --kafka-producer-property ...
 ```
 
-### TLS
-
-For Kafka brokers using TLS:
+See all options:
 
 ```
-$ java -jar target/microservice-temperature-converter-develop-SNAPSHOT.jar \
-    -b kafka.example.com:9093 \
-    --input-topic sensors \
-    --output-topic readings \
-    --requests-topic readings.requests \
-    --consumer-property security.protocol=SSL \
-    --consumer-property ssl.endpoint.identification.algorithm= \
-    --producer-property security.protocol=SSL \
-    --producer-property ssl.endpoint.identification.algorithm=
+$ java -jar target/microservice-temperature-converter-develop-SNAPSHOT.jar --help
 ```
 
 ## Topic details
