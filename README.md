@@ -1,5 +1,10 @@
 # Temperature Converter Microservice
 
+[![Build Status][build-status-image]][build-status]
+
+[build-status-image]: https://github.com/tenefit/microservice-temperature-converter.java/workflows/build/badge.svg
+[build-status]: https://github.com/tenefit/microservice-temperature-converter.java/actions
+
 A microservice that receives temperature readings from a Kafka topic, converts them to the target temperature unit, and publishes the result to another Kafka topic.
 
 The service also subscribes to a command topic to remote control the service and designate the target temperature unit (**C**elsius, **F**ahrenheit, or **K**elvin).

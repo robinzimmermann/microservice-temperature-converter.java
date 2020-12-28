@@ -17,7 +17,5 @@ buildNumber.properties
 *.ipr
 *.iws
 .DS_Store
-.classpath
-.project
 .vscode
 bin
