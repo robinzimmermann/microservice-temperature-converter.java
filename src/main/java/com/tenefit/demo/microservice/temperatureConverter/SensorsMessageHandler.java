@@ -35,6 +35,15 @@ public class SensorsMessageHandler
     {
         String inputKey = input.key();
         Header inputRow = input.headers().lastHeader("row");
+
+        /*
+        ProducerRecord<String, String> output = new ProducerRecord<>(
+            outputTopic, inputKey, String.format("{\"id\":\"%s\",\"value\":%d,\"unit\":\"F\"}",
+                inputKey, ThreadLocalRandom.current().nextInt(75, 200 + 1)));
+        output.headers().add(inputRow);
+        producer.send(output).get();
+        */
+
         try (JsonReader inputJson = Json.createReader(new StringReader(input.value())))
         {
             JsonObject inputReading = inputJson.readObject();

@@ -9,10 +9,13 @@ import static java.lang.System.currentTimeMillis;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 
@@ -125,6 +128,10 @@ public class TemperatureConverter
 
     private volatile boolean isRunning = true;
 
+    long messageCount;
+    long startMillis;
+    String prevMessageRateStr;
+
     public static void main(String[] args) throws Exception
     {
         SingleCommand<TemperatureConverter> parser = SingleCommand.singleCommand(TemperatureConverter.class);
@@ -143,6 +150,7 @@ public class TemperatureConverter
 
     public TemperatureConverter() throws Exception
     {
+        System.out.format("consumer id: %s\n", defaultGroupId);
         consumerOptions = new TreeMap<>();
         consumerOptions.put("group.id", defaultGroupId);
 
@@ -222,6 +230,9 @@ public class TemperatureConverter
         producerOptions.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         producerOptions.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 
+        producerOptions.put(ProducerConfig.ACKS_CONFIG, "0");
+        producerOptions.put(ProducerConfig.BATCH_SIZE_CONFIG, "0");
+
         if (protocol == SSL)
         {
             consumerOptions.put("security.protocol", "SSL");
@@ -290,9 +301,42 @@ public class TemperatureConverter
 
             System.out.println("TemperatureConverter microservice listening");
 
+            Timer timer = new Timer(); //At this line a new Thread will be created
+            timer.schedule(new TimerTask()
+            {
+
+                @Override
+                public void run()
+                {
+                    if (messageCount > 0)
+                    {
+                        long now = System.currentTimeMillis();
+                        long diff = (now - startMillis) / 1000;
+                        if (diff == 0)
+                        {
+                            return;
+                        }
+                        double rate = (double) messageCount / diff;
+                        String rateStr = String.format("%.1f", rate);
+                        // System.out.format("messageCount=%d, diff=%d, rate=%f\n", messageCount, diff, rate);
+                        if (!rateStr.equals(prevMessageRateStr))
+                        {
+                            System.out.format("inbound rate: %s\n", rateStr);
+                        }
+                        prevMessageRateStr = rateStr;
+                    }
+                }
+            }, Calendar.getInstance().getTime(), 1000);
+
             while (isRunning)
             {
                 ConsumerRecords<String, String> records = consumer.poll(kafkaPollTimeout);
+                // Start measuring from first message
+                if (messageCount == 0)
+                {
+                    startMillis = System.currentTimeMillis();
+                }
+                messageCount += records.count();
                 for (ConsumerRecord<String, String> record: records)
                 {
                     if (record.topic().equals(inputTopic))
@@ -302,6 +346,7 @@ public class TemperatureConverter
                     else
                     {
                         final TemperatureUnit newReadingsUnit = readingsMessageHandler.handleMessage(record);
+                        System.out.format("Got a command! Change to %s\n", newReadingsUnit);
                         if (newReadingsUnit != null)
                         {
                             readingsUnit = newReadingsUnit;
